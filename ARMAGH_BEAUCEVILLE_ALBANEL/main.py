@@ -2,6 +2,7 @@
 import glob
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.linear_model import LinearRegression
 
 from pyspark.sql import SparkSession
@@ -49,14 +50,41 @@ final_df = final_df.select(keep_columns)
 
 final_df.createOrReplaceTempView("weather_data")
 
-query = f"""
-    SELECT DISTINCT STATION_NAME
-    FROM weather_data
-"""
+for j in range(1,13):
+    data = []
 
+    for i in range(1916, 2026):
+        query = f"""
+            SELECT {i} AS LOCAL_YEAR, AVG(MEAN_TEMPERATURE) AS `AVERAGE TEMPERATURE` 
+            FROM weather_data
+            WHERE LOCAL_YEAR = {i}
+            AND LOCAL_MONTH = {j}
+        """
+
+        #sql = spark.sql(query)
+        #sql = spark.sql("SELECT COUNT(*) AS total_rows FROM weather_data")
+
+        #sql.show()
         
-sql = spark.sql(query)
-#sql = spark.sql("SELECT COUNT(*) AS total_rows FROM weather_data")
+        results = spark.sql(query).toPandas()
+        data.append(results)
+        
+    df = pd.concat(data)
 
-sql.show()
+    # Ensure there are no missing values
+    df = df.dropna()
+
+    plt.plot(df["LOCAL_YEAR"], df["AVERAGE TEMPERATURE"], label='Average Temperature')
+
+    # Fit a linear trendline (1st degree polynomial)
+    slope, intercept = np.polyfit(df["LOCAL_YEAR"], df["AVERAGE TEMPERATURE"], 1)
+    trendline = slope * df["LOCAL_YEAR"] + intercept
+    plt.plot(df["LOCAL_YEAR"], trendline, color='red', label='Trendline')
+
+    plt.xlabel("Year")
+    plt.ylabel("Temperature")
+    plt.title(f"Average Temperature for month {j}")
+    plt.legend()
+
+    plt.show()  
 #%%
