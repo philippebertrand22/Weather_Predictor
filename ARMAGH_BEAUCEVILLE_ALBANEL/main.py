@@ -50,7 +50,7 @@ final_df = final_df.select(keep_columns)
 
 final_df.createOrReplaceTempView("weather_data")
 
-for j in range(1,13):
+for j in range(1, 13):
     data = []
 
     for i in range(1916, 2026):
@@ -61,30 +61,45 @@ for j in range(1,13):
             AND LOCAL_MONTH = {j}
         """
 
-        #sql = spark.sql(query)
-        #sql = spark.sql("SELECT COUNT(*) AS total_rows FROM weather_data")
-
-        #sql.show()
-        
+        # Execute the query
         results = spark.sql(query).toPandas()
         data.append(results)
         
+    # Concatenate data into a single DataFrame
     df = pd.concat(data)
 
     # Ensure there are no missing values
     df = df.dropna()
+    
+    # Skip months with insufficient data
+    if len(df) < 2:
+        print(f"Skipping month {j} due to insufficient data")
+        continue
 
-    plt.plot(df["LOCAL_YEAR"], df["AVERAGE TEMPERATURE"], label='Average Temperature')
+    # Convert data for regression
+    x = df["LOCAL_YEAR"].values.reshape(-1, 1)
+    y = df["AVERAGE TEMPERATURE"].values
+    
+    # Fit a linear regression model
+    model = LinearRegression()
+    model.fit(x, y)
+    
+    # Generate trendline predictions
+    trendline = model.predict(x)
 
-    # Fit a linear trendline (1st degree polynomial)
-    slope, intercept = np.polyfit(df["LOCAL_YEAR"], df["AVERAGE TEMPERATURE"], 1)
-    trendline = slope * df["LOCAL_YEAR"] + intercept
-    plt.plot(df["LOCAL_YEAR"], trendline, color='red', label='Trendline')
-
+    # Plotting the data
+    plt.figure(figsize=(10, 6))
+    plt.plot(df["LOCAL_YEAR"], df["AVERAGE TEMPERATURE"], '-', alpha=0.5, label="Average Temperature")
+    plt.plot(df["LOCAL_YEAR"], trendline, 'r-', linewidth=2, label=f"Linear Trend (slope: {model.coef_[0]:.4f}°/year)")
+    
+    # Adding labels and title
     plt.xlabel("Year")
-    plt.ylabel("Temperature")
-    plt.title(f"Average Temperature for month {j}")
+    plt.ylabel("Temperature (°C)")
+    plt.title(f"Average Temperature for Month {j}")
+    plt.grid(True, alpha=0.3)
     plt.legend()
-
-    plt.show()  
+    
+    # Show the plot
+    plt.tight_layout()
+    plt.show()
 #%%
