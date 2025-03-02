@@ -41,11 +41,22 @@ for df in dfs[1:]:
 keep_columns = ["STATION_NAME",
                 "LOCAL_YEAR",
                 "LOCAL_MONTH",
-                "LOCAL_DAY",
-                "LOCAL_HOUR",
                 "MEAN_TEMPERATURE"]
 
 final_df = final_df.select(keep_columns)
 
-final_df.show()
+#final_df.show()
+
+final_df.createOrReplaceTempView("weather_data")
+
+query = f"""
+    SELECT DISTINCT STATION_NAME
+    FROM weather_data
+"""
+
+        
+sql = spark.sql(query)
+#sql = spark.sql("SELECT COUNT(*) AS total_rows FROM weather_data")
+
+sql.show()
 #%%
