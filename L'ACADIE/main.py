@@ -1,5 +1,8 @@
 #%%
 import glob
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
 
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import lit
@@ -49,15 +52,33 @@ final_df = final_df.select(keep_columns)
 
 final_df.createOrReplaceTempView("weather_data")
 
-query = """
-    SELECT MIN(LOCAL_YEAR) AS min_year
-    FROM weather_data
-    WHERE PRECIP_AMOUNT IS NOT NULL
-"""
+for j in range(1,13):
+    data = []
 
-sql = spark.sql(query)
-#sql = spark.sql("SELECT COUNT(*) AS total_rows FROM weather_data")
+    for i in range(1994, 2025):
+        query = f"""
+            SELECT {i} AS LOCAL_YEAR, AVG(TEMP) AS `AVERAGE TEMPERATURE` 
+            FROM weather_data
+            WHERE LOCAL_YEAR = {i}
+            AND LOCAL_MONTH = {j}
+        """
 
-sql.show()
+        #sql = spark.sql(query)
+        #sql = spark.sql("SELECT COUNT(*) AS total_rows FROM weather_data")
+
+        #sql.show()
+        
+        results = spark.sql(query).toPandas()
+        data.append(results)
+        
+    df = pd.concat(data)
+
+    plt.plot(df["LOCAL_YEAR"], df["AVERAGE TEMPERATURE"])
+    plt.xlabel("Year")
+    plt.ylabel("Temperature")
+    plt.title(f"Average Temperature for month {j}")
+
+    plt.show()    
+    
 
 # %%
