@@ -8,6 +8,7 @@ from sklearn.linear_model import LinearRegression
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import lit
 import os
+import calendar
 
 spark = SparkSession.builder.appName("MergedData").getOrCreate()
 
@@ -75,7 +76,7 @@ else:
 
 final_df.createOrReplaceTempView("weather_data")
 
-for j in range(1, 3):
+for j in range(3, 6):
     data = []
 
     for i in range(1916, 2026):
@@ -117,10 +118,13 @@ for j in range(1, 3):
     plt.plot(df["LOCAL_YEAR"], df["AVERAGE TEMPERATURE"], '-', alpha=0.5, label="Average Temperature")
     plt.plot(df["LOCAL_YEAR"], trendline, 'r-', linewidth=2, label=f"Linear Trend (slope: {model.coef_[0]:.4f}°/year)")
     
+    # Get the month name
+    month = calendar.month_name[j]
+    
     # Adding labels and title
     plt.xlabel("Year")
     plt.ylabel("Temperature (°C)")
-    plt.title(f"Average Temperature for Month {j}")
+    plt.title(f"Average Temperature for {month}")
     plt.grid(True, alpha=0.3)
     plt.legend()
     
