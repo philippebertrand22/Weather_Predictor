@@ -7,6 +7,7 @@ from sklearn.linear_model import LinearRegression
 
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import lit
+import os
 
 spark = SparkSession.builder.appName("MergedData").getOrCreate()
 
@@ -42,15 +43,39 @@ for df in dfs[1:]:
 keep_columns = ["STATION_NAME",
                 "LOCAL_YEAR",
                 "LOCAL_MONTH",
+                "LOCAL_DAY",
                 "MEAN_TEMPERATURE"]
 
 final_df = final_df.select(keep_columns)
 
 #final_df.show()
 
+# Convert columns to appropriate data types
+final_df = final_df.withColumn("LOCAL_YEAR", final_df["LOCAL_YEAR"].cast("int"))
+final_df = final_df.withColumn("LOCAL_MONTH", final_df["LOCAL_MONTH"].cast("int"))
+final_df = final_df.withColumn("LOCAL_DAY", final_df["LOCAL_DAY"].cast("int"))
+final_df = final_df.withColumn("MEAN_TEMPERATURE", final_df["MEAN_TEMPERATURE"].cast("float"))
+
+#remove row with missing values
+final_df = final_df.na.drop()
+
+# Sort the data by date
+final_df = final_df.orderBy("LOCAL_YEAR", "LOCAL_MONTH", "LOCAL_DAY")
+
+# Save the final data to a CSV file
+pandas_df = final_df.toPandas()
+
+#make sure the file does not exist
+file_path = "final_data.csv"
+if os.path.exists(file_path):
+    pass
+else:
+    pandas_df.to_csv("final_data.csv", index=False)
+
+
 final_df.createOrReplaceTempView("weather_data")
 
-for j in range(1, 13):
+for j in range(1, 3):
     data = []
 
     for i in range(1916, 2026):
@@ -102,4 +127,5 @@ for j in range(1, 13):
     # Show the plot
     plt.tight_layout()
     plt.show()
+    
 #%%
