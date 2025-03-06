@@ -3,12 +3,12 @@ import glob
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.linear_model import LinearRegression
-
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import lit
 import os
 import calendar
+
+from sklearn.linear_model import LinearRegression
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import lit
 
 spark = SparkSession.builder.appName("MergedData").getOrCreate()
 
@@ -45,7 +45,8 @@ keep_columns = ["STATION_NAME",
                 "LOCAL_YEAR",
                 "LOCAL_MONTH",
                 "LOCAL_DAY",
-                "MEAN_TEMPERATURE"]
+                "MEAN_TEMPERATURE",
+                "TOTAL_PRECIPITATION"]
 
 final_df = final_df.select(keep_columns)
 
@@ -56,6 +57,7 @@ final_df = final_df.withColumn("LOCAL_YEAR", final_df["LOCAL_YEAR"].cast("int"))
 final_df = final_df.withColumn("LOCAL_MONTH", final_df["LOCAL_MONTH"].cast("int"))
 final_df = final_df.withColumn("LOCAL_DAY", final_df["LOCAL_DAY"].cast("int"))
 final_df = final_df.withColumn("MEAN_TEMPERATURE", final_df["MEAN_TEMPERATURE"].cast("float"))
+final_df = final_df.withColumn("TOTAL_PRECIPITATION", final_df["TOTAL_PRECIPITATION"].cast("float"))
 
 #remove row with missing values
 final_df = final_df.na.drop()
@@ -76,12 +78,12 @@ else:
 
 final_df.createOrReplaceTempView("weather_data")
 
-for j in range(3, 6):
+for j in range(3, 5):
     data = []
 
     for i in range(1916, 2026):
         query = f"""
-            SELECT {i} AS LOCAL_YEAR, AVG(MEAN_TEMPERATURE) AS `AVERAGE TEMPERATURE` 
+            SELECT {i} AS LOCAL_YEAR, AVG(MEAN_TEMPERATURE) AS `AVERAGE TEMPERATURE`, AVG(TOTAL_PRECIPITATION) AS `AVERAGE PRECIPITATION` 
             FROM weather_data
             WHERE LOCAL_YEAR = {i}
             AND LOCAL_MONTH = {j}
@@ -104,20 +106,22 @@ for j in range(3, 6):
 
     # Convert data for regression
     x = df["LOCAL_YEAR"].values.reshape(-1, 1)
-    y = df["AVERAGE TEMPERATURE"].values
+    y1 = df["AVERAGE TEMPERATURE"].values
+    y2 = df["AVERAGE PRECIPITATION"].values
     
     # Fit a linear regression model
     model = LinearRegression()
-    model.fit(x, y)
-    
+    model.fit(x, y1)
+        
     # Generate trendline predictions
     trendline = model.predict(x)
 
     # Plotting the data
     plt.figure(figsize=(10, 6))
     plt.plot(df["LOCAL_YEAR"], df["AVERAGE TEMPERATURE"], '-', alpha=0.5, label="Average Temperature")
-    plt.plot(df["LOCAL_YEAR"], trendline, 'r-', linewidth=2, label=f"Linear Trend (slope: {model.coef_[0]:.4f}°/year)")
-    
+    plt.plot(df["LOCAL_YEAR"], trendline, 'r-', linewidth=2, label=f"Slope: {model.coef_[0]:.4f}°/year)")
+    plt.plot(df["LOCAL_YEAR"], df["AVERAGE PRECIPITATION"], '-', alpha=0.5, label="Average Precipitation")
+   
     # Get the month name
     month = calendar.month_name[j]
     
