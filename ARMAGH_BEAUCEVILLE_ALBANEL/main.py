@@ -120,7 +120,7 @@ for j in range(3, 5):
     plt.figure(figsize=(10, 6))
     plt.plot(df["LOCAL_YEAR"], df["AVERAGE TEMPERATURE"], '-', alpha=0.5, label="Average Temperature")
     plt.plot(df["LOCAL_YEAR"], trendline, 'r-', linewidth=2, label=f"Slope: {model.coef_[0]:.4f}°/year)")
-    plt.plot(df["LOCAL_YEAR"], df["AVERAGE PRECIPITATION"], '-', alpha=0.5, label="Average Precipitation")
+    #plt.plot(df["LOCAL_YEAR"], df["AVERAGE PRECIPITATION"], '-', alpha=0.5, label="Average Precipitation")
    
     # Get the month name
     month = calendar.month_name[j]
