@@ -78,7 +78,7 @@ else:
 
 final_df.createOrReplaceTempView("weather_data")
 
-for j in range(3, 5):
+for j in range(3, 4):
     data = []
 
     for i in range(1916, 2026):
